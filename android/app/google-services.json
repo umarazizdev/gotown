@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "420694596588",
+    "project_id": "gotown-864ce",
+    "storage_bucket": "gotown-864ce.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:420694596588:android:1b6e5a30232f813e2b3ec9",
+        "android_client_info": {
+          "package_name": "com.gotown.gotown"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBGgtnPwLdfjU_OZqmngpKgXzwAgzOQaCo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
