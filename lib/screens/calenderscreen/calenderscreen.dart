@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:gotown/main.dart';
+import 'package:gotown/services/userservice.dart';
 import 'package:gotown/utilities/const.dart';
 import 'package:intl/intl.dart';
 
@@ -13,6 +15,19 @@ class CallenderScreen extends StatefulWidget {
 }
 
 class _CallenderScreenState extends State<CallenderScreen> {
+  Color getCategoryColor(String category) {
+    switch (category) {
+      case "Concert":
+        return corange;
+      case "Culture":
+        return cyellow;
+      case "Sport":
+        return cpurple;
+      default:
+        return const Color(0xff3B4160);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final h = MediaQuery.of(context).size.height;
@@ -28,9 +43,9 @@ class _CallenderScreenState extends State<CallenderScreen> {
             Padding(
               padding: const EdgeInsets.only(left: 0),
               child: RichText(
-                text: const TextSpan(
+                text: TextSpan(
                   children: [
-                    TextSpan(
+                    const TextSpan(
                       text: 'Hello ',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
@@ -39,8 +54,8 @@ class _CallenderScreenState extends State<CallenderScreen> {
                       ),
                     ),
                     TextSpan(
-                      text: 'Wroclaw',
-                      style: TextStyle(
+                      text: box.read('selectedCity'),
+                      style: const TextStyle(
                         fontWeight: FontWeight.normal,
                         color: cwhitetext,
                         fontSize: 22,
@@ -58,190 +73,83 @@ class _CallenderScreenState extends State<CallenderScreen> {
               style: TextStyle(
                   color: cwhitetext, fontSize: 40, fontWeight: FontWeight.w500),
             ),
-            // SizedBox(
-            //   height: h * 0.018,
-            // ),
-            // const Text(
-            //   "8:03",
-            //   style: TextStyle(
-            //       color: cwhitetext,
-            //       fontSize: 15,
-            //       fontWeight: FontWeight.w500,
-            //       height: 0.7),
-            // ),
-            // const Divider(
-            //   color: cwhitetext,
-            // ),
-            // const Text(
-            //   "Concert xyz",
-            //   style: TextStyle(
-            //       height: 0.7,
-            //       color: corange,
-            //       fontSize: 15,
-            //       fontWeight: FontWeight.w500),
-            // ),
-            // SizedBox(
-            //   height: h * 0.005,
-            // ),
-            // const Text(
-            //   "Sport Match ABC vs XYZ",
-            //   style: TextStyle(
-            //       color: cyellow, fontSize: 15, fontWeight: FontWeight.w500),
-            // ),
-            // SizedBox(
-            //   height: h * 0.016,
-            // ),
-            // const Text(
-            //   "11:03",
-            //   style: TextStyle(
-            //       height: 0.7,
-            //       color: cwhitetext,
-            //       fontSize: 15,
-            //       fontWeight: FontWeight.w500),
-            // ),
-            // const Divider(
-            //   color: cwhitetext,
-            // ),
-            // const Text(
-            //   "Concert xyz",
-            //   style: TextStyle(
-            //       height: 0.7,
-            //       color: cyellow,
-            //       fontSize: 15,
-            //       fontWeight: FontWeight.w500),
-            // ),
-            // SizedBox(
-            //   height: h * 0.005,
-            // ),
-            // const Text(
-            //   "Sport Match ABC vs XYZ",
-            //   style: TextStyle(
-            //       color: corange, fontSize: 15, fontWeight: FontWeight.w500),
-            // ),
-            // const Text(
-            //   "Opera xyz",
-            //   style: TextStyle(
-            //       color: cpurpletext,
-            //       fontSize: 15,
-            //       fontWeight: FontWeight.w500),
-            // ),
-            // const Text(
-            //   "Sport Match ABC vs XYZ",
-            //   style: TextStyle(
-            //       color: cyellow, fontSize: 15, fontWeight: FontWeight.w500),
-            // ),
-            // SizedBox(
-            //   height: h * 0.016,
-            // ),
-            // const Text(
-            //   "11:03",
-            //   style: TextStyle(
-            //       height: 0.7,
-            //       color: cwhitetext,
-            //       fontSize: 15,
-            //       fontWeight: FontWeight.w500),
-            // ),
-            // const Divider(
-            //   color: cwhitetext,
-            // ),
-            // const Text(
-            //   "Theatre Retro",
-            //   style: TextStyle(
-            //       height: 0.7,
-            //       color: cpurpletext,
-            //       fontSize: 15,
-            //       fontWeight: FontWeight.w500),
-            // ),
-            const Expanded(
-              child: CalendarEventList(),
+            SizedBox(
+              height: h * 0.018,
+            ),
+            StreamBuilder<List<String>>(
+              stream: UserService.favoritesStream(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                final favIds = snapshot.data!;
+                if (favIds.isEmpty) {
+                  return const Center(
+                      child: Text("No favorites yet",
+                          style: TextStyle(color: Colors.white)));
+                }
+
+                return StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('events')
+                      .where(FieldPath.documentId, whereIn: favIds)
+                      .snapshots(),
+                  builder: (context, snap) {
+                    if (!snap.hasData) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    final favEvents = snap.data!.docs.map((doc) {
+                      return Event.fromFirestore(doc);
+                    }).toList();
+
+                    return ListView.builder(
+                      shrinkWrap: true,
+                      padding: const EdgeInsets.all(0),
+                      itemCount: favEvents.length,
+                      itemBuilder: (context, index) {
+                        final event = favEvents[index];
+
+                        DateTime parsedDate =
+                            DateFormat('d MMMM y').parse(event.date);
+                        String formattedDay =
+                            DateFormat('d:MM').format(parsedDate);
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              formattedDay,
+                              style: const TextStyle(
+                                color: cwhitetext,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                                height: 0.7,
+                              ),
+                            ),
+                            const Divider(color: cwhitetext),
+                            Text(
+                              event.category,
+                              style: TextStyle(
+                                height: 0.7,
+                                color: getCategoryColor(event.category),
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                );
+              },
             ),
           ],
         ),
       ),
-    );
-  }
-}
-
-class CalendarEventList extends StatelessWidget {
-  const CalendarEventList({super.key});
-
-  Color getCategoryColor(String category) {
-    switch (category) {
-      case "Concert":
-        return corange;
-      case "Culture":
-        return cyellow;
-      case "Sport":
-        return cpurple;
-      default:
-        return const Color(0xff3B4160);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final h = MediaQuery.of(context).size.height;
-
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('events')
-          .orderBy('timestamp')
-          .snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return const Center(
-            child:
-                Text("No upcoming events", style: TextStyle(color: cwhitetext)),
-          );
-        }
-        print("Loaded docs: ${snapshot.data!.docs.length}");
-
-        final now = DateTime.now();
-        final events = snapshot.data!.docs
-            .map((doc) => Event.fromFirestore(doc))
-            .where((event) {
-          final eventDate = DateFormat('d MMMM y').parse(event.date);
-          return !eventDate.isBefore(DateTime(now.year, now.month, now.day));
-        }).toList();
-
-        return ListView.separated(
-          itemCount: events.length,
-          separatorBuilder: (context, index) => SizedBox(height: h * 0.018),
-          itemBuilder: (context, index) {
-            final event = events[index];
-            final categoryColor = getCategoryColor(event.category);
-            final parsedDate = DateFormat('d MMMM y').parse(event.date);
-
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  DateFormat('d MM').format(parsedDate).toUpperCase(),
-                  style: const TextStyle(
-                    color: cwhitetext,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    height: 0.7,
-                  ),
-                ),
-                const Divider(color: cwhitetext),
-                Text(
-                  event.title,
-                  style: TextStyle(
-                    height: 0.7,
-                    color: categoryColor,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            );
-          },
-        );
-      },
     );
   }
 }

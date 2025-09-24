@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:gotown/main.dart';
 import 'package:gotown/models/eventmodel.dart';
 import 'package:gotown/screens/homescreen/detailscreen.dart';
+import 'package:gotown/services/userservice.dart';
 import 'package:gotown/utilities/const.dart';
 import 'package:intl/intl.dart';
 
@@ -45,12 +47,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SizedBox(height: h * 0.055),
-            const Padding(
-              padding: EdgeInsets.only(left: 16),
+            Padding(
+              padding: const EdgeInsets.only(left: 16),
               child: Text.rich(
                 TextSpan(
                   children: [
-                    TextSpan(
+                    const TextSpan(
                       text: 'Hello ',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
@@ -59,8 +61,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       ),
                     ),
                     TextSpan(
-                      text: 'Wroclaw',
-                      style: TextStyle(
+                      text: box.read('selectedCity') ?? 'Wrocław',
+                      style: const TextStyle(
                         fontWeight: FontWeight.normal,
                         color: cwhitetext,
                         fontSize: 22,
@@ -134,11 +136,15 @@ class EventListView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final h = MediaQuery.of(context).size.height;
-
+    final now = DateTime.now();
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('events')
           .where('category', isEqualTo: category)
+          .where('expiryDate', isGreaterThan: now)
+          .where('city',
+              isEqualTo:
+                  (box.read('selectedCity') ?? 'Wrocław').toString().trim())
           // .orderBy('timestamp', descending: true)
           .snapshots(),
       builder: (context, snapshot) {
@@ -190,6 +196,23 @@ class EventListView extends StatelessWidget {
                         height: h * 0.388,
                         width: double.infinity,
                         fit: BoxFit.cover,
+                        // loadingBuilder: (context, child, loadingProgress) {
+                        //   if (loadingProgress == null) return child;
+                        //   return Image.asset(
+                        //     'assets/placeholder-image.png',
+                        //     height: h * 0.388,
+                        //     width: double.infinity,
+                        //     fit: BoxFit.cover,
+                        //   );
+                        // },
+                        // errorBuilder: (context, error, stackTrace) {
+                        //   return Image.asset(
+                        //     'assets/placeholder-image.png',
+                        //     height: h * 0.388,
+                        //     width: double.infinity,
+                        //     fit: BoxFit.cover,
+                        //   );
+                        // },
                       ),
                     ),
                     Positioned(
@@ -204,12 +227,39 @@ class EventListView extends StatelessWidget {
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                             colors: [
-                              cbg.withOpacity(0.1),
-                              // const Color(0xfffdfdfd).withOpacity(0.1),
-                              cbg.withOpacity(0.9),
+                              const Color(0xfffdfdfd).withOpacity(0.1),
+                              cbg,
                             ],
                           ),
                         ),
+                      ),
+                    ),
+                    Positioned(
+                      top: 12,
+                      left: 12,
+                      child: StreamBuilder<List<String>>(
+                        stream: UserService.favoritesStream(),
+                        builder: (context, snapshot) {
+                          final favorites = snapshot.data ?? [];
+                          final isFav = favorites.contains(event.id);
+
+                          return Container(
+                            padding: const EdgeInsets.all(0),
+                            decoration: const BoxDecoration(
+                              color: cbg,
+                              shape: BoxShape.circle,
+                            ),
+                            child: IconButton(
+                              icon: Icon(
+                                isFav ? Icons.favorite : Icons.favorite_border,
+                                color: Colors.red,
+                              ),
+                              onPressed: () {
+                                UserService.toggleFavorite(event.id);
+                              },
+                            ),
+                          );
+                        },
                       ),
                     ),
                     Positioned(
