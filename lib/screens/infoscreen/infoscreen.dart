@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:gotown/utilities/const.dart';
 
+import '../../main.dart';
+
 class InfoScreen extends StatefulWidget {
   const InfoScreen({super.key});
 
@@ -24,9 +26,9 @@ class _InfoScreenState extends State<InfoScreen> {
             Padding(
               padding: const EdgeInsets.only(left: 0),
               child: RichText(
-                text: const TextSpan(
+                text: TextSpan(
                   children: [
-                    TextSpan(
+                    const TextSpan(
                       text: 'Hello ',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
@@ -35,8 +37,8 @@ class _InfoScreenState extends State<InfoScreen> {
                       ),
                     ),
                     TextSpan(
-                      text: 'Wroclaw',
-                      style: TextStyle(
+                      text: box.read('selectedCity') ?? 'Wroclaw',
+                      style: const TextStyle(
                         fontWeight: FontWeight.normal,
                         color: cwhitetext,
                         fontSize: 22,
